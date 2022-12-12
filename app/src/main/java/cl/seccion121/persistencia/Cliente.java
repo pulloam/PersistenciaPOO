@@ -43,10 +43,6 @@ public class Cliente {
 
     }
 
-
-
-
-
     public Factura[] obtenerFacturas(){
         Factura[] facturas = new Factura[lasFacturas.size()];
         for(int x = 0; x < lasFacturas.size(); x = x + 1){
@@ -57,12 +53,6 @@ public class Cliente {
         return facturas;
 
     }
-
-    public ArrayList<Factura> obtenerFacturas2(){
-        return lasFacturas;
-    }
-
-
 
     //region Constructores
 

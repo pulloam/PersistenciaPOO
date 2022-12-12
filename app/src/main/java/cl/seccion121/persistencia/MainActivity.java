@@ -4,44 +4,171 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
+    private EditText etRut, etCorreo;
+    private Spinner spnTipo;
+    private Button btnGrabar, btnEliminar, btnRetroceder, btnAvanzar;
+    private TextView tvPaginacion;
+
+    //Spinner
+    private String[] tipoCliente;
+    private ArrayAdapter adapterTipo;
+
+    //Clientes
+    private ArrayList<Cliente> losClientes;
+
+    private int indiceActual = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Cliente cli = new Cliente();
-        cli.setRut("1-9");
+        poblar();
+        referencias();
+        eventos();
 
-        if(cli.agregarFactura(new Factura(1234,"01/01/2000",1000))){
-            Log.d("TAG_", "Factura Agregada");
+        obtenerDatosCliente();
+    }
+
+
+
+    private void poblar() {
+        tipoCliente = new String[] {"Selecione tipo de cliente", "Bueno", "Regular", "Malo"};
+
+        losClientes = new ArrayList<Cliente>();
+        losClientes.add(new Cliente("1-9", "aaaa@aaa.cl", "Bueno"));
+        losClientes.add(new Cliente("2-0", "bbbb@aaa.cl", "Malo"));
+        losClientes.add(new Cliente("3-1", "cccc@aaa.cl", "Regular"));
+        losClientes.add(new Cliente("4-2", "eeee@aaa.cl", "Bueno"));
+    }
+
+    private void obtenerDatosCliente(){
+        if(indiceActual >= 0 && indiceActual < losClientes.size()) {
+            Cliente cli = losClientes.get(indiceActual);
+            etRut.setText(cli.getRut());
+            etCorreo.setText(cli.getCorreo());
+
+            if(cli.getTipo().equals("Bueno")) spnTipo.setSelection(1);
+
+            if(cli.getTipo().equals("Regular")) spnTipo.setSelection(2);
+
+            if(cli.getTipo().equals("Malo")) spnTipo.setSelection(3);
+
+            tvPaginacion.setText((indiceActual + 1) + " de " + losClientes.size());
         }
+    }
 
-        if(cli.agregarFactura(new Factura(1234,"01/01/2000",1000))){
-            Log.d("TAG_", "Factura Agregada");
-        }else{
-            Log.e("TAG_", "Factura error");
-        }
+    private void limpiarPantalla(){
+        etRut.setText(""); etCorreo.setText(""); spnTipo.setSelection(0);
+        etRut.setError(null); etCorreo.setError(null);
+        tvPaginacion.setText("" + losClientes.size());
+        indiceActual = -1;
+    }
 
-        for(int x = 1; x <= 30; x = x + 1){
-            cli.agregarFactura(new Factura(5000 + x,"01/01/2000",1000));
+    private void grabarCliente(){
+        String rut, correo, tipo = "";
+        boolean rutOK = true;
 
-            if(cli.agregarFactura(new Factura(1234,"01/01/2000",1000000))){
-                Log.d("TAG_", "Factura Agregada");
-            }else{
-                Log.e("TAG_", "Factura no se pudo agregar, tiene errores en la tabla");
+        rut = etRut.getText().toString();
+        correo = etCorreo.getText().toString();
+        tipo = spnTipo.getSelectedItem().toString();
+
+        for(Cliente c : losClientes){
+            if(c.getRut().equals(rut)) {
+                rutOK = false;
+                break;
             }
         }
 
-        Factura[] lasFacturasCli = cli.obtenerFacturas();
+        if(rut.isEmpty() || correo.isEmpty() || spnTipo.getSelectedItemPosition() == 0){
+            etRut.setError("Tiene errores de validación");
+        }else {
+            if(rutOK) {
+                Cliente cli = new Cliente(rut, correo, tipo);
+                losClientes.add(cli);
 
-        cli.eliminarFactura(5020);
+                tvPaginacion.setText((indiceActual + 1) + " de " + losClientes.size());
+                Toast.makeText(MainActivity.this, "Grabado exitosamente", Toast.LENGTH_SHORT).show();
+                limpiarPantalla();
+            }else{
+                etRut.setError("Rut ya está ingresado");
+            }
+        }
+    }
 
-        Log.d("TAG_", "Suma de venta " + cli.obtenerTotalVentas());
+    private void eliminarCliente(){
+        if(indiceActual >= 0 && indiceActual < losClientes.size()) {
+            losClientes.remove(indiceActual);
+            limpiarPantalla();
+        }
+    }
 
-        Log.d("TAG_", "");
+    private void referencias() {
+        etRut = findViewById(R.id.etRut);
+        etCorreo = findViewById(R.id.etCorreo);
+        spnTipo = findViewById(R.id.spnTipo);
+        btnGrabar = findViewById(R.id.btnGrabar);
+        btnEliminar = findViewById(R.id.btnEliminar);
+        btnRetroceder = findViewById(R.id.btnRetrocede);
+        tvPaginacion = findViewById(R.id.tvPag);
+        btnAvanzar = findViewById(R.id.btnAvanzar);
 
+        adapterTipo = new ArrayAdapter(this, android.R.layout.simple_spinner_item, tipoCliente);
+        spnTipo.setAdapter(adapterTipo);
+
+    }
+
+    private void eventos() {
+        btnGrabar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                grabarCliente();
+            }
+        });
+
+        btnEliminar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                eliminarCliente();
+            }
+        });
+
+        btnRetroceder.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                indiceActual = indiceActual - 1;
+
+                if(indiceActual == -1)
+                    indiceActual = losClientes.size() - 1;
+
+                obtenerDatosCliente();
+            }
+        });
+
+        btnAvanzar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                indiceActual = indiceActual + 1;
+
+                if(indiceActual == losClientes.size()) {
+                    //btnAvanzar.setEnabled(false);
+                    //btnAvanzar.setVisibility(View.INVISIBLE);
+                    indiceActual = 0;
+                }
+
+                obtenerDatosCliente();
+            }
+        });
     }
 }
