@@ -2,6 +2,9 @@ package cl.seccion121.persistencia;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -98,6 +101,8 @@ public class MainActivity extends AppCompatActivity {
                 Cliente cli = new Cliente(rut, correo, tipo);
                 losClientes.add(cli);
 
+                grabarBaseDatos(cli);
+
                 tvPaginacion.setText((indiceActual + 1) + " de " + losClientes.size());
                 Toast.makeText(MainActivity.this, "Grabado exitosamente", Toast.LENGTH_SHORT).show();
                 limpiarPantalla();
@@ -106,6 +111,56 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+    public void grabarBaseDatos(Cliente cli){
+        try{
+            AdministradorBaseDatos adbd = new AdministradorBaseDatos(this, "BDAplicacion", null, 1);
+            SQLiteDatabase miBD = adbd.getWritableDatabase();
+
+            //Forma android
+            ContentValues reg = new ContentValues();
+            reg.put("rut", cli.getRut());
+            reg.put("correo", cli.getCorreo());
+            reg.put("edad", 35);
+
+            miBD.insert("clientes", null, reg);
+
+            //Forma clásica - nombre dado por Luis Madriaga
+           /* String[] parametros = {cli.getRut(), cli.getCorreo(), "34"};
+            miBD.execSQL(
+                    "insert into clientes (rut, correo, edad) values(?,?,?)"
+            , parametros);*/
+
+
+            miBD.close();
+        }catch (Exception ex){
+            Log.e("TAG_", ex.toString());
+        }
+
+        consultaSQL();
+
+    }
+
+    private void consultaSQL(){
+        AdministradorBaseDatos adbd = new AdministradorBaseDatos(this, "BDAplicacion", null, 1);
+        SQLiteDatabase miBD = adbd.getWritableDatabase();
+        try {
+            Cursor c = miBD.rawQuery("Select * from clientes order by rut desc", null);
+            if(c.moveToFirst()){
+                Log.d("TAG_","Registros recuperados " + c.getCount());
+                do{
+                    Log.d("TAG_", "Rut " + c.getString(0) +
+                            ", correo " + c.getString(1) +
+                            ", edad " + c.getInt(2));
+                }while(c.moveToNext());
+            }
+        }catch (Exception ex){
+            Log.e("TAG_", ex.toString());
+        }finally {
+            miBD.close();
+        }
+    }
+
 
     private void eliminarCliente(){
         if(indiceActual >= 0 && indiceActual < losClientes.size()) {
